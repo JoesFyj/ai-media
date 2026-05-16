@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>问题分析与解决方案汇报</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #3b82f6;
+            --secondary-color: #1e293b;
+            --text-color: #334155;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            --font-size-base: 14px;
+            --font-size-heading: 28px;
+            --font-size-subtitle: 14px;
+            --font-size-section: 18px;
+            --font-size-card-title: 16px;
+            --font-size-problem-title: 14px;
+            --font-size-problem-desc: 14px;
+            --font-size-stat-number: 28px;
+            --font-size-stat-label: 13px;
+            --font-size-tab: 14px;
+            --font-size-btn: 14px;
+            --font-size-hint: 12px;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --card-shadow: rgba(0,0,0,0.05);
+            --accent-blue: #3b82f6;
+            --accent-amber: #f59e0b;
+            --accent-emerald: #10b981;
+            --tab-bg: #f1f5f9;
+            --tab-active: #ffffff;
+            --divider-color: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            padding: 24px;
+            font-size: var(--font-size-base);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: var(--font-size-heading);
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: var(--font-size-subtitle);
+        }
+
+        .config-btn {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+            z-index: 100;
+            transition: all 0.2s;
+        }
+
+        .config-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .config-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 20px rgba(0,0,0,0.1);
+            padding: 24px;
+            z-index: 200;
+            transition: right 0.3s;
+            overflow-y: auto;
+        }
+
+        .config-panel.open {
+            right: 0;
+        }
+
+        .config-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+            display: none;
+        }
+
+        .config-overlay.show {
+            display: block;
+        }
+
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .config-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .config-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #f1f5f9;
+            cursor: pointer;
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        .config-section {
+            margin-bottom: 24px;
+        }
+
+        .config-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 12px;
+        }
+
+        .config-item {
+            margin-bottom: 16px;
+        }
+
+        .config-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .config-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .config-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .config-row .config-item {
+            flex: 1;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .color-picker::-webkit-color-swatch-wrapper {
+            padding: 2px;
+        }
+
+        .color-picker::-webkit-color-swatch {
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .font-size-slider {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .font-size-value {
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .apply-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: var(--font-size-btn);
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: opacity 0.2s;
+        }
+
+        .apply-btn:hover {
+            opacity: 0.9;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 12px;
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            border-radius: 8px;
+            font-size: var(--font-size-btn);
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: white;
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: var(--font-size-tab);
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #f1f5f9;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .config-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card-blue {
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .card-amber {
+            border-left: 4px solid var(--accent-amber);
+        }
+
+        .card-emerald {
+            border-left: 4px solid var(--accent-emerald);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .main-stat-title {
+            font-size: 22px !important;
+            font-weight: 700 !important;
+            color: var(--heading-color) !important;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-amber {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-emerald {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .problem-list {
+            font-size: var(--font-size-card-title);
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .problem-list {
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .problem-item {
+            padding: 16px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .problem-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .problem-title {
+            font-size: var(--font-size-problem-title);
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 8px;
+        }
+
+        .problem-desc {
+            font-size: var(--font-size-problem-desc);
+            color: var(--text-color);
+            outline: none;
+            min-height: 40px;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        .problem-desc:focus {
+            background: #fff;
+            padding: 6px;
+            border-radius: 6px;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #92400e;
+        }
+
+        .highlight-blue {
+            background: linear-gradient(120deg, #dbeafe 0%, #bfdbfe 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #1d4ed8;
+        }
+
+        .highlight-red {
+            background: linear-gradient(120deg, #fee2e2 0%, #fecaca 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #dc2626;
+        }
+
+        .highlight-green {
+            background: linear-gradient(120deg, #d1fae5 0%, #a7f3d0 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #059669;
+        }
+
+        .highlight-preview {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .preview-item {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .preview-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            cursor: zoom-in;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.02);
+        }
+
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox-overlay.show {
+            display: flex;
+        }
+
+        .lightbox-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .highlight-toolbar {
+            display: none;
+            gap: 8px;
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .highlight-toolbar.show {
+            display: flex;
+        }
+
+        .toolbar-toggle {
+            margin-bottom: 16px;
+        }
+
+        .background-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .background-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 12px;
+        }
+
+        .background-upload-area {
+            width: 100%;
+            min-height: 150px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.5);
+        }
+
+        .background-upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .background-upload-area.has-image {
+            border-style: solid;
+            border-color: var(--primary-color);
+        }
+
+        .background-preview {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            cursor: zoom-in;
+            border-radius: 8px;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            background: linear-gradient(120deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .highlight-btn {
+            padding: 8px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .highlight-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .highlight-btn-yellow {
+            background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
+            border-color: #fde047;
+            color: #92400e;
+        }
+
+        .highlight-btn-blue {
+            background: linear-gradient(120deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .highlight-btn-red {
+            background: linear-gradient(120deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #fecaca;
+            color: #dc2626;
+        }
+
+        .highlight-btn-green {
+            background: linear-gradient(120deg, #d1fae5 0%, #a7f3d0 100%);
+            border-color: #a7f3d0;
+            color: #059669;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .stat-item {
+            padding: 16px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-blue {
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        .stat-amber {
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .stat-emerald {
+            background: rgba(16, 185, 129, 0.15);
+        }
+
+        .stat-number {
+            font-size: var(--font-size-stat-number);
+            font-weight: 700;
+        }
+
+        .stat-blue .stat-number {
+            color: var(--accent-blue);
+        }
+
+        .stat-amber .stat-number {
+            color: var(--accent-amber);
+        }
+
+        .stat-emerald .stat-number {
+            color: var(--accent-emerald);
+        }
+
+        .stat-label {
+            font-size: var(--font-size-stat-label);
+            margin-top: 4px;
+            color: var(--text-muted);
+        }
+
+        .section-title {
+            font-size: var(--font-size-section);
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+
+        .analysis-section {
+            margin-bottom: 24px;
+        }
+
+        .analysis-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .analysis-content {
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .analysis-blue {
+            background: rgba(219, 234, 254, 0.5);
+            border: 1px solid #bfdbfe;
+        }
+
+        .analysis-amber {
+            background: rgba(254, 243, 199, 0.5);
+            border: 1px solid #fde68a;
+        }
+
+        .analysis-emerald {
+            background: rgba(209, 250, 229, 0.5);
+            border: 1px solid #a7f3d0;
+        }
+
+        .analysis-text {
+            font-size: var(--font-size-base);
+            color: #334155;
+            line-height: 1.7;
+            outline: none;
+            min-height: 60px;
+        }
+
+        .analysis-text:focus {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .image-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px dashed #cbd5e1;
+        }
+
+        .image-section-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .image-upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.5);
+        }
+
+        .image-upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .image-upload-area.has-image {
+            padding: 12px;
+            border-style: solid;
+            border-color: #10b981;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .upload-hint {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .image-actions {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .image-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-btn:hover {
+            background: #f8fafc;
+        }
+
+        .image-btn.remove {
+            color: #ef4444;
+            border-color: #fecaca;
+        }
+
+        .image-btn.remove:hover {
+            background: #fef2f2;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 24px 0;
+        }
+
+        .hint {
+            text-align: center;
+            font-size: var(--font-size-hint);
+            color: var(--text-light);
+            margin-top: 16px;
+        }
+
+        .scroll-area {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="config-btn" onclick="openConfig()">⚙️</button>
+    
+    <div class="config-overlay" id="configOverlay" onclick="closeConfig()"></div>
+    
+    <div class="config-panel" id="configPanel">
+        <div class="config-header">
+            <span class="config-title">页面配置</span>
+            <button class="config-close" onclick="closeConfig()">✕</button>
+        </div>
+
+        <div class="config-section">
+            <div class="config-section-title">标题设置</div>
+            <div class="config-item">
+                <label class="config-label">主标题</label>
+                <input type="text" class="config-input" id="configTitle" value="问题分析与解决方案汇报">
+            </div>
+            <div class="config-item">
+                <label class="config-label">副标题</label>
+                <input type="text" class="config-input" id="configSubtitle" value="给领导的一页式汇报材料">
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="config-section-title">字体大小</div>
+            <div class="config-item">
+                <label class="config-label">主标题字体</label>
+                <input type="range" class="font-size-slider" id="configHeadingSize" min="20" max="48" value="28">
+                <div class="font-size-value" id="configHeadingSizeValue">28px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">副标题字体</label>
+                <input type="range" class="font-size-slider" id="configSubtitleSize" min="12" max="20" value="14">
+                <div class="font-size-value" id="configSubtitleSizeValue">14px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">板块标题字体</label>
+                <input type="range" class="font-size-slider" id="configSectionSize" min="16" max="28" value="18">
+                <div class="font-size-value" id="configSectionSizeValue">18px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">卡片标题字体</label>
+                <input type="range" class="font-size-slider" id="configCardTitleSize" min="14" max="22" value="16">
+                <div class="font-size-value" id="configCardTitleSizeValue">16px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">问题标题字体</label>
+                <input type="range" class="font-size-slider" id="configProblemTitleSize" min="12" max="18" value="14">
+                <div class="font-size-value" id="configProblemTitleSizeValue">14px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">问题描述字体</label>
+                <input type="range" class="font-size-slider" id="configProblemDescSize" min="12" max="18" value="14">
+                <div class="font-size-value" id="configProblemDescSizeValue">14px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">统计数字字体</label>
+                <input type="range" class="font-size-slider" id="configStatNumberSize" min="20" max="40" value="28">
+                <div class="font-size-value" id="configStatNumberSizeValue">28px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">统计标签字体</label>
+                <input type="range" class="font-size-slider" id="configStatLabelSize" min="11" max="16" value="13">
+                <div class="font-size-value" id="configStatLabelSizeValue">13px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">Tab按钮字体</label>
+                <input type="range" class="font-size-slider" id="configTabSize" min="12" max="18" value="14">
+                <div class="font-size-value" id="configTabSizeValue">14px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">按钮字体</label>
+                <input type="range" class="font-size-slider" id="configBtnSize" min="12" max="18" value="14">
+                <div class="font-size-value" id="configBtnSizeValue">14px</div>
+            </div>
+            <div class="config-item">
+                <label class="config-label">提示文字字体</label>
+                <input type="range" class="font-size-slider" id="configHintSize" min="10" max="14" value="12">
+                <div class="font-size-value" id="configHintSizeValue">12px</div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="config-section-title">颜色设置</div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">主题色</label>
+                    <input type="color" class="color-picker" id="configPrimaryColor" value="#3b82f6">
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">文字颜色</label>
+                    <input type="color" class="color-picker" id="configTextColor" value="#334155">
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">标题颜色</label>
+                    <input type="color" class="color-picker" id="configHeadingColor" value="#1e293b">
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">次要文字颜色</label>
+                    <input type="color" class="color-picker" id="configTextMuted" value="#64748b">
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">卡片边框颜色</label>
+                    <input type="color" class="color-picker" id="configCardBorder" value="#e2e8f0">
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">蓝色强调色</label>
+                    <input type="color" class="color-picker" id="configAccentBlue" value="#3b82f6">
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">橙色强调色</label>
+                    <input type="color" class="color-picker" id="configAccentAmber" value="#f59e0b">
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="color-picker-wrapper">
+                    <label class="config-label">绿色强调色</label>
+                    <input type="color" class="color-picker" id="configAccentEmerald" value="#10b981">
+                </div>
+            </div>
+        </div>
+
+        <button class="apply-btn" onclick="applyConfig()">应用配置</button>
+        <button class="reset-btn" onclick="resetConfig()">恢复默认</button>
+        
+        <div class="config-section">
+            <div class="config-section-title">高亮标记说明</div>
+            <div class="highlight-preview">
+                <div class="preview-item"><span class="highlight">黄色高亮</span> - 重要关键词</div>
+                <div class="preview-item"><span class="highlight-blue">蓝色高亮</span> - 流程/方案</div>
+                <div class="preview-item"><span class="highlight-red">红色高亮</span> - 问题/风险</div>
+                <div class="preview-item"><span class="highlight-green">绿色高亮</span> - 解决方案</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1 id="mainTitle">问题分析与解决方案汇报</h1>
+            <p id="mainSubtitle">给领导的一页式汇报材料</p>
+        </div>
+
+        <div class="background-section">
+            <div class="background-label" contenteditable="true">📷 背景图片（可选）</div>
+            <div class="background-upload-area" id="upload-background" onclick="triggerUpload('background')">
+                <div class="upload-placeholder">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">点击上传背景图片</div>
+                    <div class="upload-hint">支持 JPG、PNG 格式，点击图片可放大查看</div>
+                </div>
+            </div>
+            <input type="file" id="input-background" accept="image/*" onchange="handleBackgroundUpload(this)">
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title main-stat-title" contenteditable="true">问题汇总统计</span>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item stat-blue">
+                    <div class="stat-number" contenteditable="true">3</div>
+                    <div class="stat-label" contenteditable="true">变更类问题</div>
+                </div>
+                <div class="stat-item stat-amber">
+                    <div class="stat-number" contenteditable="true">2</div>
+                    <div class="stat-label" contenteditable="true">代码类问题</div>
+                </div>
+                <div class="stat-item stat-emerald">
+                    <div class="stat-number" contenteditable="true">2</div>
+                    <div class="stat-label" contenteditable="true">测试覆盖率问题</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('problems')" contenteditable="true">问题分类</button>
+            <button class="tab-btn" onclick="showTab('analysis')" contenteditable="true">原因分析</button>
+            <button class="tab-btn" onclick="showTab('solutions')" contenteditable="true">解决方案</button>
+        </div>
+
+        <div id="problems" class="tab-content active">
+            <div class="toolbar-toggle">
+                <button class="toggle-btn" onclick="toggleHighlightToolbar('highlightToolbar')">✏️ 编辑工具</button>
+            </div>
+            <div class="highlight-toolbar" id="highlightToolbar" style="display: none;">
+                <span style="font-size: 13px; color: #64748b; font-weight: 500;">高亮标记：</span>
+                <button class="highlight-btn highlight-btn-yellow" onclick="wrapSelection('highlight')">🟡 重要</button>
+                <button class="highlight-btn highlight-btn-blue" onclick="wrapSelection('highlight-blue')">🔵 流程</button>
+                <button class="highlight-btn highlight-btn-red" onclick="wrapSelection('highlight-red')">🔴 问题</button>
+                <button class="highlight-btn highlight-btn-green" onclick="wrapSelection('highlight-green')">🟢 方案</button>
+            </div>
+            <div class="grid-3">
+                <div class="card card-blue">
+                    <div class="card-header">
+                        <span class="badge badge-blue" contenteditable="true">第一类</span>
+                        <span class="card-title" contenteditable="true">烧写/方案/附录变更</span>
+                    </div>
+                    <div class="problem-list">
+                        <div class="problem-item">
+                            <div class="problem-title" contenteditable="true">问题 1.1</div>
+                            <div class="problem-desc" contenteditable="true">[请在此输入具体问题描述]</div>
+                        </div>
+                        <div class="problem-item">
+                            <div class="problem-title" contenteditable="true">问题 1.2</div>
+                            <div class="problem-desc" contenteditable="true">[请在此输入具体问题描述]</div>
+                        </div>
+                        <div class="problem-item">
+                            <div class="problem-title" contenteditable="true">问题 1.3</div>
+                            <div class="problem-desc" contenteditable="true">[请在此输入具体问题描述]</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-amber">
+                    <div class="card-header">
+                        <span class="badge badge-amber" contenteditable="true">第二类</span>
+                        <span class="card-title" contenteditable="true">程序代码问题</span>
+                    </div>
+                    <div class="problem-list">
+                        <div class="problem-item">
+                            <div class="problem-title" contenteditable="true">问题 2.1</div>
+                            <div class="problem-desc" contenteditable="true">[请在此输入具体问题描述]</div>
+                        </div>
+                        <div class="problem-item">
+                            <div class="problem-title" contenteditable="true">问题 2.2</div>
+                            <div class="problem-desc" contenteditable="true">[请在此输入具体问题描述]</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-emerald">
+                    <div class="card-header">
+                        <span class="badge badge-emerald" contenteditable="true">第三类</span>
+                        <span class="card-title" contenteditable="true">版本测试覆盖率</span>
+                    </div>
+                    <div class="problem-list">
+                        <div class="problem-item">
+                            <div class="problem-title" contenteditable="true">问题 3.1</div>
+                            <div class="problem-desc" contenteditable="true">[请在此输入具体问题描述]</div>
+                        </div>
+                        <div class="problem-item">
+                            <div class="problem-title" contenteditable="true">问题 3.2</div>
+                            <div class="problem-desc" contenteditable="true">[请在此输入具体问题描述]</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analysis" class="tab-content">
+            <div class="card">
+                <div class="section-title" contenteditable="true">深度原因分析（根因分析）</div>
+                <div class="toolbar-toggle">
+                    <button class="toggle-btn" onclick="toggleHighlightToolbar('analysisToolbar')">✏️ 编辑工具</button>
+                </div>
+                <div class="highlight-toolbar" id="analysisToolbar" style="display: none;">
+                    <span style="font-size: 13px; color: #64748b; font-weight: 500;">高亮标记：</span>
+                    <button class="highlight-btn highlight-btn-yellow" onclick="wrapSelection('highlight')">🟡 重要</button>
+                    <button class="highlight-btn highlight-btn-blue" onclick="wrapSelection('highlight-blue')">🔵 流程</button>
+                    <button class="highlight-btn highlight-btn-red" onclick="wrapSelection('highlight-red')">🔴 问题</button>
+                    <button class="highlight-btn highlight-btn-green" onclick="wrapSelection('highlight-green')">🟢 方案</button>
+                </div>
+                <div class="scroll-area">
+                    <div class="analysis-section">
+                        <div class="analysis-header">
+                            <span class="badge badge-blue" contenteditable="true">第一类问题根因</span>
+                        </div>
+                        <div class="analysis-content analysis-blue">
+                            <div class="analysis-text" contenteditable="true">[请在此输入第一类问题的深度原因分析，结合领域现状进行阐述...]</div>
+                        </div>
+                        <div class="image-section">
+                            <div class="image-section-label" contenteditable="true">📷 佐证图片（可选）</div>
+                            <div class="image-grid">
+                                <div class="image-upload-area" id="upload-analysis-1" onclick="triggerUpload('analysis-1')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-analysis-1" accept="image/*" onchange="handleImageUpload(this, 'upload-analysis-1')">
+                                <div class="image-upload-area" id="upload-analysis-1-2" onclick="triggerUpload('analysis-1-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-analysis-1-2" accept="image/*" onchange="handleImageUpload(this, 'upload-analysis-1-2')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="analysis-section">
+                        <div class="analysis-header">
+                            <span class="badge badge-amber" contenteditable="true">第二类问题根因</span>
+                        </div>
+                        <div class="analysis-content analysis-amber">
+                            <div class="analysis-text" contenteditable="true">[请在此输入第二类问题的深度原因分析，结合领域现状进行阐述...]</div>
+                        </div>
+                        <div class="image-section">
+                            <div class="image-section-label" contenteditable="true">📷 佐证图片（可选）</div>
+                            <div class="image-grid">
+                                <div class="image-upload-area" id="upload-analysis-2" onclick="triggerUpload('analysis-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-analysis-2" accept="image/*" onchange="handleImageUpload(this, 'upload-analysis-2')">
+                                <div class="image-upload-area" id="upload-analysis-2-2" onclick="triggerUpload('analysis-2-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-analysis-2-2" accept="image/*" onchange="handleImageUpload(this, 'upload-analysis-2-2')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="analysis-section">
+                        <div class="analysis-header">
+                            <span class="badge badge-emerald" contenteditable="true">第三类问题根因</span>
+                        </div>
+                        <div class="analysis-content analysis-emerald">
+                            <div class="analysis-text" contenteditable="true">[请在此输入第三类问题的深度原因分析，结合领域现状进行阐述...]</div>
+                        </div>
+                        <div class="image-section">
+                            <div class="image-section-label" contenteditable="true">📷 佐证图片（可选）</div>
+                            <div class="image-grid">
+                                <div class="image-upload-area" id="upload-analysis-3" onclick="triggerUpload('analysis-3')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-analysis-3" accept="image/*" onchange="handleImageUpload(this, 'upload-analysis-3')">
+                                <div class="image-upload-area" id="upload-analysis-3-2" onclick="triggerUpload('analysis-3-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-analysis-3-2" accept="image/*" onchange="handleImageUpload(this, 'upload-analysis-3-2')">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="solutions" class="tab-content">
+            <div class="card">
+                <div class="section-title" contenteditable="true">针对性解决措施</div>
+                <div class="toolbar-toggle">
+                    <button class="toggle-btn" onclick="toggleHighlightToolbar('solutionsToolbar')">✏️ 编辑工具</button>
+                </div>
+                <div class="highlight-toolbar" id="solutionsToolbar" style="display: none;">
+                    <span style="font-size: 13px; color: #64748b; font-weight: 500;">高亮标记：</span>
+                    <button class="highlight-btn highlight-btn-yellow" onclick="wrapSelection('highlight')">🟡 重要</button>
+                    <button class="highlight-btn highlight-btn-blue" onclick="wrapSelection('highlight-blue')">🔵 流程</button>
+                    <button class="highlight-btn highlight-btn-red" onclick="wrapSelection('highlight-red')">🔴 问题</button>
+                    <button class="highlight-btn highlight-btn-green" onclick="wrapSelection('highlight-green')">🟢 方案</button>
+                </div>
+                <div class="scroll-area">
+                    <div class="analysis-section">
+                        <div class="analysis-header">
+                            <span class="badge badge-blue" contenteditable="true">针对变更类问题</span>
+                        </div>
+                        <div class="analysis-content analysis-blue">
+                            <div class="analysis-text" contenteditable="true">[请在此输入针对第一类问题的具体解决方案和实施措施...]</div>
+                        </div>
+                        <div class="image-section">
+                            <div class="image-section-label" contenteditable="true">📷 佐证图片（可选）</div>
+                            <div class="image-grid">
+                                <div class="image-upload-area" id="upload-solution-1" onclick="triggerUpload('solution-1')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-solution-1" accept="image/*" onchange="handleImageUpload(this, 'upload-solution-1')">
+                                <div class="image-upload-area" id="upload-solution-1-2" onclick="triggerUpload('solution-1-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-solution-1-2" accept="image/*" onchange="handleImageUpload(this, 'upload-solution-1-2')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="analysis-section">
+                        <div class="analysis-header">
+                            <span class="badge badge-amber" contenteditable="true">针对代码类问题</span>
+                        </div>
+                        <div class="analysis-content analysis-amber">
+                            <div class="analysis-text" contenteditable="true">[请在此输入针对第二类问题的具体解决方案和实施措施...]</div>
+                        </div>
+                        <div class="image-section">
+                            <div class="image-section-label" contenteditable="true">📷 佐证图片（可选）</div>
+                            <div class="image-grid">
+                                <div class="image-upload-area" id="upload-solution-2" onclick="triggerUpload('solution-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-solution-2" accept="image/*" onchange="handleImageUpload(this, 'upload-solution-2')">
+                                <div class="image-upload-area" id="upload-solution-2-2" onclick="triggerUpload('solution-2-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-solution-2-2" accept="image/*" onchange="handleImageUpload(this, 'upload-solution-2-2')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="analysis-section">
+                        <div class="analysis-header">
+                            <span class="badge badge-emerald" contenteditable="true">针对测试覆盖率问题</span>
+                        </div>
+                        <div class="analysis-content analysis-emerald">
+                            <div class="analysis-text" contenteditable="true">[请在此输入针对第三类问题的具体解决方案和实施措施...]</div>
+                        </div>
+                        <div class="image-section">
+                            <div class="image-section-label" contenteditable="true">📷 佐证图片（可选）</div>
+                            <div class="image-grid">
+                                <div class="image-upload-area" id="upload-solution-3" onclick="triggerUpload('solution-3')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-solution-3" accept="image/*" onchange="handleImageUpload(this, 'upload-solution-3')">
+                                <div class="image-upload-area" id="upload-solution-3-2" onclick="triggerUpload('solution-3-2')">
+                                    <div class="upload-placeholder">
+                                        <div class="upload-icon">🖼️</div>
+                                        <div class="upload-text">点击上传图片</div>
+                                        <div class="upload-hint">支持 JPG、PNG 格式</div>
+                                    </div>
+                                </div>
+                                <input type="file" id="input-solution-3-2" accept="image/*" onchange="handleImageUpload(this, 'upload-solution-3-2')">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hint">💡 提示：所有标注为可编辑的区域可直接点击修改内容，图片可直接拖拽上传，点击图片可放大查看</div>
+    </div>
+
+    <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox()">
+        <button class="lightbox-close" onclick="closeLightbox()">×</button>
+        <img src="" class="lightbox-content" id="lightboxImage">
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function wrapSelection(className) {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                if (!range.collapsed) {
+                    const span = document.createElement('span');
+                    span.className = className;
+                    range.surroundContents(span);
+                }
+            }
+        }
+
+        function triggerUpload(id) {
+            document.getElementById('input-' + id).click();
+        }
+
+        function handleImageUpload(input, areaId) {
+            const area = document.getElementById(areaId);
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    area.innerHTML = `
+                        <img src="${e.target.result}" class="image-preview" alt="预览图片" onclick="openLightbox('${e.target.result}')">
+                        <div class="image-actions">
+                            <button class="image-btn remove" onclick="removeImage('${areaId}', '${input.id}')">删除图片</button>
+                        </div>
+                    `;
+                    area.classList.add('has-image');
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function handleBackgroundUpload(input) {
+            const area = document.getElementById('upload-background');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    area.innerHTML = `
+                        <img src="${e.target.result}" class="background-preview" alt="背景图片" onclick="openLightbox('${e.target.result}')">
+                        <div class="image-actions">
+                            <button class="image-btn remove" onclick="removeBackgroundImage('${input.id}')">删除图片</button>
+                        </div>
+                    `;
+                    area.classList.add('has-image');
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removeBackgroundImage(inputId) {
+            const area = document.getElementById('upload-background');
+            const input = document.getElementById(inputId);
+            
+            area.innerHTML = `
+                <div class="upload-placeholder">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">点击上传背景图片</div>
+                    <div class="upload-hint">支持 JPG、PNG 格式，点击图片可放大查看</div>
+                </div>
+            `;
+            area.classList.remove('has-image');
+            input.value = '';
+        }
+
+        function openLightbox(imageSrc) {
+            const lightboxOverlay = document.getElementById('lightboxOverlay');
+            const lightboxImage = document.getElementById('lightboxImage');
+            
+            lightboxImage.src = imageSrc;
+            lightboxOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const lightboxOverlay = document.getElementById('lightboxOverlay');
+            lightboxOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('lightboxImage').addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        function removeImage(areaId, inputId) {
+            const area = document.getElementById(areaId);
+            const input = document.getElementById(inputId);
+            
+            area.innerHTML = `
+                <div class="upload-placeholder">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">点击上传图片</div>
+                    <div class="upload-hint">支持 JPG、PNG 格式</div>
+                </div>
+            `;
+            area.classList.remove('has-image');
+            input.value = '';
+        }
+
+        function toggleHighlightToolbar(toolbarId) {
+            console.log('toggleHighlightToolbar called with:', toolbarId);
+            const toolbar = document.getElementById(toolbarId);
+            console.log('toolbar element:', toolbar);
+            if (toolbar) {
+                toolbar.classList.toggle('show');
+                console.log('toolbar classList after toggle:', toolbar.classList);
+                console.log('toolbar display style:', toolbar.style.display);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadAreas = document.querySelectorAll('.image-upload-area');
+            
+            uploadAreas.forEach(area => {
+                area.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#3b82f6';
+                    this.style.background = 'rgba(59, 130, 246, 0.05)';
+                });
+                
+                area.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#cbd5e1';
+                    this.style.background = 'rgba(255,255,255,0.5)';
+                });
+                
+                area.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#cbd5e1';
+                    this.style.background = 'rgba(255,255,255,0.5)';
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const inputId = this.id.replace('upload-', 'input-');
+                        const input = document.getElementById(inputId);
+                        
+                        const dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        input.files = dt.files;
+                        
+                        handleImageUpload(input, this.id);
+                    }
+                });
+            });
+
+            document.getElementById('configHeadingSize').addEventListener('input', function() {
+                document.getElementById('configHeadingSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configSubtitleSize').addEventListener('input', function() {
+                document.getElementById('configSubtitleSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configSectionSize').addEventListener('input', function() {
+                document.getElementById('configSectionSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configCardTitleSize').addEventListener('input', function() {
+                document.getElementById('configCardTitleSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configProblemTitleSize').addEventListener('input', function() {
+                document.getElementById('configProblemTitleSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configProblemDescSize').addEventListener('input', function() {
+                document.getElementById('configProblemDescSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configStatNumberSize').addEventListener('input', function() {
+                document.getElementById('configStatNumberSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configStatLabelSize').addEventListener('input', function() {
+                document.getElementById('configStatLabelSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configTabSize').addEventListener('input', function() {
+                document.getElementById('configTabSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configBtnSize').addEventListener('input', function() {
+                document.getElementById('configBtnSizeValue').textContent = this.value + 'px';
+            });
+            
+            document.getElementById('configHintSize').addEventListener('input', function() {
+                document.getElementById('configHintSizeValue').textContent = this.value + 'px';
+            });
+        });
+
+        function openConfig() {
+            document.getElementById('configPanel').classList.add('open');
+            document.getElementById('configOverlay').classList.add('show');
+        }
+
+        function closeConfig() {
+            document.getElementById('configPanel').classList.remove('open');
+            document.getElementById('configOverlay').classList.remove('show');
+        }
+
+        function applyConfig() {
+            const root = document.documentElement;
+            
+            const title = document.getElementById('configTitle').value;
+            const subtitle = document.getElementById('configSubtitle').value;
+            const headingSize = document.getElementById('configHeadingSize').value;
+            const subtitleSize = document.getElementById('configSubtitleSize').value;
+            const sectionSize = document.getElementById('configSectionSize').value;
+            const cardTitleSize = document.getElementById('configCardTitleSize').value;
+            const problemTitleSize = document.getElementById('configProblemTitleSize').value;
+            const problemDescSize = document.getElementById('configProblemDescSize').value;
+            const statNumberSize = document.getElementById('configStatNumberSize').value;
+            const statLabelSize = document.getElementById('configStatLabelSize').value;
+            const tabSize = document.getElementById('configTabSize').value;
+            const btnSize = document.getElementById('configBtnSize').value;
+            const hintSize = document.getElementById('configHintSize').value;
+            const primaryColor = document.getElementById('configPrimaryColor').value;
+            const textColor = document.getElementById('configTextColor').value;
+            const headingColor = document.getElementById('configHeadingColor').value;
+            const textMuted = document.getElementById('configTextMuted').value;
+            const cardBorder = document.getElementById('configCardBorder').value;
+            const accentBlue = document.getElementById('configAccentBlue').value;
+            const accentAmber = document.getElementById('configAccentAmber').value;
+            const accentEmerald = document.getElementById('configAccentEmerald').value;
+
+            document.getElementById('mainTitle').textContent = title;
+            document.getElementById('mainSubtitle').textContent = subtitle;
+
+            root.style.setProperty('--font-size-heading', headingSize + 'px');
+            root.style.setProperty('--font-size-subtitle', subtitleSize + 'px');
+            root.style.setProperty('--font-size-section', sectionSize + 'px');
+            root.style.setProperty('--font-size-card-title', cardTitleSize + 'px');
+            root.style.setProperty('--font-size-problem-title', problemTitleSize + 'px');
+            root.style.setProperty('--font-size-problem-desc', problemDescSize + 'px');
+            root.style.setProperty('--font-size-stat-number', statNumberSize + 'px');
+            root.style.setProperty('--font-size-stat-label', statLabelSize + 'px');
+            root.style.setProperty('--font-size-tab', tabSize + 'px');
+            root.style.setProperty('--font-size-btn', btnSize + 'px');
+            root.style.setProperty('--font-size-hint', hintSize + 'px');
+            root.style.setProperty('--primary-color', primaryColor);
+            root.style.setProperty('--text-color', textColor);
+            root.style.setProperty('--secondary-color', headingColor);
+            root.style.setProperty('--text-muted', textMuted);
+            root.style.setProperty('--card-border', cardBorder);
+            root.style.setProperty('--accent-blue', accentBlue);
+            root.style.setProperty('--accent-amber', accentAmber);
+            root.style.setProperty('--accent-emerald', accentEmerald);
+
+            closeConfig();
+        }
+
+        function resetConfig() {
+            document.getElementById('configTitle').value = '问题分析与解决方案汇报';
+            document.getElementById('configSubtitle').value = '给领导的一页式汇报材料';
+            document.getElementById('configHeadingSize').value = '28';
+            document.getElementById('configHeadingSizeValue').textContent = '28px';
+            document.getElementById('configSubtitleSize').value = '14';
+            document.getElementById('configSubtitleSizeValue').textContent = '14px';
+            document.getElementById('configSectionSize').value = '18';
+            document.getElementById('configSectionSizeValue').textContent = '18px';
+            document.getElementById('configCardTitleSize').value = '16';
+            document.getElementById('configCardTitleSizeValue').textContent = '16px';
+            document.getElementById('configProblemTitleSize').value = '14';
+            document.getElementById('configProblemTitleSizeValue').textContent = '14px';
+            document.getElementById('configProblemDescSize').value = '14';
+            document.getElementById('configProblemDescSizeValue').textContent = '14px';
+            document.getElementById('configStatNumberSize').value = '28';
+            document.getElementById('configStatNumberSizeValue').textContent = '28px';
+            document.getElementById('configStatLabelSize').value = '13';
+            document.getElementById('configStatLabelSizeValue').textContent = '13px';
+            document.getElementById('configTabSize').value = '14';
+            document.getElementById('configTabSizeValue').textContent = '14px';
+            document.getElementById('configBtnSize').value = '14';
+            document.getElementById('configBtnSizeValue').textContent = '14px';
+            document.getElementById('configHintSize').value = '12';
+            document.getElementById('configHintSizeValue').textContent = '12px';
+            document.getElementById('configPrimaryColor').value = '#3b82f6';
+            document.getElementById('configTextColor').value = '#334155';
+            document.getElementById('configHeadingColor').value = '#1e293b';
+            document.getElementById('configTextMuted').value = '#64748b';
+            document.getElementById('configCardBorder').value = '#e2e8f0';
+            document.getElementById('configAccentBlue').value = '#3b82f6';
+            document.getElementById('configAccentAmber').value = '#f59e0b';
+            document.getElementById('configAccentEmerald').value = '#10b981';
+
+            const root = document.documentElement;
+            root.style.setProperty('--font-size-heading', '28px');
+            root.style.setProperty('--font-size-subtitle', '14px');
+            root.style.setProperty('--font-size-section', '18px');
+            root.style.setProperty('--font-size-card-title', '16px');
+            root.style.setProperty('--font-size-problem-title', '14px');
+            root.style.setProperty('--font-size-problem-desc', '14px');
+            root.style.setProperty('--font-size-stat-number', '28px');
+            root.style.setProperty('--font-size-stat-label', '13px');
+            root.style.setProperty('--font-size-tab', '14px');
+            root.style.setProperty('--font-size-btn', '14px');
+            root.style.setProperty('--font-size-hint', '12px');
+            root.style.setProperty('--primary-color', '#3b82f6');
+            root.style.setProperty('--text-color', '#334155');
+            root.style.setProperty('--secondary-color', '#1e293b');
+            root.style.setProperty('--text-muted', '#64748b');
+            root.style.setProperty('--card-border', '#e2e8f0');
+            root.style.setProperty('--accent-blue', '#3b82f6');
+            root.style.setProperty('--accent-amber', '#f59e0b');
+            root.style.setProperty('--accent-emerald', '#10b981');
+
+            closeConfig();
+        }
+    </script>
+</body>
+</html>
